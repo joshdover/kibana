@@ -61,7 +61,7 @@ export class MetricTile extends Component {
 /*
 Wrapper component that simply maps each metric to MetricTile inside a FlexGroup
 */
-const MetricTiles = ({
+export const MetricTiles = ({
   metrics
 }) => (
   <EuiFlexGrid columns={3}>
@@ -78,5 +78,3 @@ const MetricTiles = ({
 MetricTiles.propTypes = {
   metrics: PropTypes.arrayOf(MetricPropType).isRequired
 };
-
-export default MetricTiles;

@@ -21,7 +21,7 @@ import 'ui/autoload/styles';
 import { uiModules } from 'ui/modules';
 import chrome from 'ui/chrome';
 
-import StatusApp from './components/status_app';
+import { StatusApp } from './components/status_app';
 
 const app = uiModules.get('apps/status', []);
 app.directive('statusApp', function (reactDirective) {

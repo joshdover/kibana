@@ -19,7 +19,7 @@
 
 import React from 'react';
 import { shallow } from 'enzyme';
-import StatusTable from './status_table';
+import { StatusTable } from './status_table';
 
 
 const STATE = {

@@ -19,7 +19,7 @@
 
 import React from 'react';
 import { shallow } from 'enzyme';
-import ServerStatus from './server_status';
+import { ServerStatus } from './server_status';
 
 const STATE = {
   id: 'green',

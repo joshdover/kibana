@@ -33,11 +33,11 @@ import {
   EuiFlexItem,
 } from '@elastic/eui';
 
-import MetricTiles from './metric_tiles';
-import StatusTable from './status_table';
-import ServerStatus from './server_status';
+import { MetricTiles } from './metric_tiles';
+import { StatusTable } from './status_table';
+import { ServerStatus } from './server_status';
 
-class StatusApp extends Component {
+export class StatusApp extends Component {
   static propTypes = {
     buildNum: PropTypes.number.isRequired,
     buildSha: PropTypes.string.isRequired,
@@ -133,5 +133,3 @@ class StatusApp extends Component {
     );
   }
 }
-
-export default StatusApp;

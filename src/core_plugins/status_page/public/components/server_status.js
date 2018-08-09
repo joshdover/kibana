@@ -28,7 +28,7 @@ import {
   EuiBadge,
 } from '@elastic/eui';
 
-const ServerState = ({
+export const ServerStatus = ({
   name,
   serverState
 }) => (
@@ -57,9 +57,7 @@ const ServerState = ({
   </EuiFlexGroup>
 );
 
-ServerState.propTypes = {
+ServerStatus.propTypes = {
   name: PropTypes.string.isRequired,
   serverState: StatePropType.isRequired
 };
-
-export default ServerState;

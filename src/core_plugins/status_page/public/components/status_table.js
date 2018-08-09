@@ -26,7 +26,7 @@ import {
 } from '@elastic/eui';
 
 
-class StatusTable extends Component {
+export class StatusTable extends Component {
   static propTypes = {
     statuses: PropTypes.arrayOf(PropTypes.shape({
       id: PropTypes.string.isRequired,  // plugin id
@@ -71,5 +71,3 @@ class StatusTable extends Component {
     );
   }
 }
-
-export default StatusTable;
