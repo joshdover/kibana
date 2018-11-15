@@ -54,7 +54,7 @@
     "uiFramework:createComponent": "cd packages/kbn-ui-framework && yarn createComponent",
     "uiFramework:documentComponent": "cd packages/kbn-ui-framework && yarn documentComponent",
     "kbn:watch": "node scripts/kibana --dev --logging.json=false",
-    "build:types": "tsc --p tsconfig.types.json",
+    "build:types": "tsc --p tsconfig.types.json --skipLibCheck",
     "kbn:bootstrap": "yarn build:types"
   },
   "repository": {
