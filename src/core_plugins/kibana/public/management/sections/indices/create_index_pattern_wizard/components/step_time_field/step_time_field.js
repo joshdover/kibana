@@ -40,10 +40,19 @@ import { injectI18n, FormattedMessage } from '@kbn/i18n/react';
 export class StepTimeFieldComponent extends Component {
   static propTypes = {
     indexPattern: PropTypes.string.isRequired,
+    indexPatternsService: PropTypes.shape({
+      fieldsFetcher: PropTypes.shape({
+        fetchForWildcard: PropTypes.func.isRequired,
+      }).isRequired,
+    }).isRequired,
     indexPatternsService: PropTypes.object.isRequired,
     goToPreviousStep: PropTypes.func.isRequired,
     createIndexPattern: PropTypes.func.isRequired,
-    indexPatternCreationType: PropTypes.object.isRequired,
+    indexPatternCreationType: PropTypes.shape({
+      getIndexPatternType: PropTypes.func.isRequired,
+      getIndexPatternName: PropTypes.func.isRequired,
+      getFetchForWildcardOptions: PropTypes.func.isRequired,
+    }).isRequired,
   }
 
   constructor(props) {

@@ -33,11 +33,12 @@ jest.mock('ui/chrome', () => ({
   addBasePath: () => { },
 }));
 
+const noop = () => {};
 const mockIndexPatternCreationType = {
   getIndexPatternType: () => 'default',
-  getIndexPatternName: () => 'name'
+  getIndexPatternName: () => 'name',
+  getFetchForWildcardOptions: noop,
 };
-const noop = () => {};
 const indexPatternsService = {
   fieldsFetcher: {
     fetchForWildcard: noop,
