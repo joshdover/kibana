@@ -21,7 +21,7 @@ import chalk from 'chalk';
 
 import { linkProjectExecutables } from '../utils/link_project_executables';
 import { log } from '../utils/log';
-import { parallelizeBatches } from '../utils/parallelize';
+import { parallelize } from '../utils/parallelize';
 import { topologicallyBatchProjects } from '../utils/projects';
 import { ICommand } from './';
 
@@ -33,7 +33,6 @@ export const BootstrapCommand: ICommand = {
     const batchedProjectsByWorkspace = topologicallyBatchProjects(projects, projectGraph, {
       batchByWorkspace: true,
     });
-    const batchedProjects = topologicallyBatchProjects(projects, projectGraph);
 
     const frozenLockfile = options['frozen-lockfile'] === true;
     const extraArgs = frozenLockfile ? ['--frozen-lockfile'] : [];
@@ -63,7 +62,7 @@ export const BootstrapCommand: ICommand = {
      * have to, as it will slow down the bootstrapping process.
      */
     log.write(chalk.bold('\nLinking executables completed, running `kbn:bootstrap` scripts\n'));
-    await parallelizeBatches(batchedProjects, async pkg => {
+    await parallelize(Array.from(projects.values()), async pkg => {
       if (pkg.hasScript('kbn:bootstrap')) {
         await pkg.runScriptStreaming('kbn:bootstrap');
       }

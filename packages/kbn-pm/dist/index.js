@@ -12198,7 +12198,6 @@ const BootstrapCommand = exports.BootstrapCommand = {
             const batchedProjectsByWorkspace = (0, _projects.topologicallyBatchProjects)(projects, projectGraph, {
                 batchByWorkspace: true
             });
-            const batchedProjects = (0, _projects.topologicallyBatchProjects)(projects, projectGraph);
             const frozenLockfile = options['frozen-lockfile'] === true;
             const extraArgs = frozenLockfile ? ['--frozen-lockfile'] : [];
             _log.log.write(_chalk2.default.bold('\nRunning installs in topological order:'));
@@ -12222,7 +12221,7 @@ const BootstrapCommand = exports.BootstrapCommand = {
              * have to, as it will slow down the bootstrapping process.
              */
             _log.log.write(_chalk2.default.bold('\nLinking executables completed, running `kbn:bootstrap` scripts\n'));
-            yield (0, _parallelize.parallelizeBatches)(batchedProjects, (() => {
+            yield (0, _parallelize.parallelize)(Array.from(projects.values()), (() => {
                 var _ref = _asyncToGenerator(function* (pkg) {
                     if (pkg.hasScript('kbn:bootstrap')) {
                         yield pkg.runScriptStreaming('kbn:bootstrap');
