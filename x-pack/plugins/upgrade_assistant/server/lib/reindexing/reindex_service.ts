@@ -308,17 +308,45 @@ export const reindexServiceFactory = (
       };
     }
 
-    const startReindex = (await callCluster('reindex', {
-      refresh: true,
-      waitForCompletion: false,
-      body: reindexBody,
-    })) as { task: string };
+    if (isTasksIndex(reindexOp.attributes.indexName)) {
+      try {
+        // For the .tasks index we can't create a new task so we must use wait_for_completion
+        const startReindex = (await callCluster('reindex', {
+          refresh: true,
+          waitForCompletion: true,
+          body: reindexBody,
+        })) as { created: number; total: number; failures: any[] };
 
-    return actions.updateReindexOp(reindexOp, {
-      lastCompletedStep: ReindexStep.reindexStarted,
-      reindexTaskId: startReindex.task,
-      reindexTaskPercComplete: 0,
-    });
+        if (startReindex.created !== startReindex.total) {
+          throw new Error('no complete');
+        }
+
+        // If this is complete, we can skip the polling step of the state machine.
+        return actions.updateReindexOp(reindexOp, {
+          lastCompletedStep: ReindexStep.reindexCompleted,
+          reindexTaskPercComplete: 1,
+        });
+      } catch (e) {
+        // If the wait_for_completion times out, set to zero, DO NOT set taskId
+        // TODO: filter the exception for timeout only
+        return actions.updateReindexOp(reindexOp, {
+          lastCompletedStep: ReindexStep.reindexStarted,
+          reindexTaskPercComplete: 0,
+        });
+      }
+    } else {
+      const startReindex = (await callCluster('reindex', {
+        refresh: true,
+        waitForCompletion: false,
+        body: reindexBody,
+      })) as { task: string };
+
+      return actions.updateReindexOp(reindexOp, {
+        lastCompletedStep: ReindexStep.reindexStarted,
+        reindexTaskId: startReindex.task,
+        reindexTaskPercComplete: 0,
+      });
+    }
   };
 
   /**
@@ -327,6 +355,28 @@ export const reindexServiceFactory = (
    */
   const updateReindexStatus = async (reindexOp: ReindexSavedObject) => {
     const taskId = reindexOp.attributes.reindexTaskId;
+
+    // If there is not a taskId (eg. when reindexing the .tasks index itself) attempt to
+    // infer status by comparing counts.
+    if (!taskId) {
+      const { count: sourceCount } = await callCluster('count', {
+        index: reindexOp.attributes.indexName,
+      });
+      const { count: destCount } = await callCluster('count', {
+        index: reindexOp.attributes.newIndexName,
+      });
+
+      if (destCount >= sourceCount) {
+        return actions.updateReindexOp(reindexOp, {
+          lastCompletedStep: ReindexStep.reindexCompleted,
+          reindexTaskPercComplete: 1,
+        });
+      } else {
+        return actions.updateReindexOp(reindexOp, {
+          reindexTaskPercComplete: destCount / sourceCount,
+        });
+      }
+    }
 
     // Check reindexing task progress
     const taskResponse = await callCluster('tasks.get', {
@@ -555,3 +605,5 @@ const isMlIndex = (indexName: string) =>
   indexName.startsWith('.ml-state') || indexName.startsWith('.ml-anomalies');
 
 const isWatcherIndex = (indexName: string) => indexName.startsWith('.watches');
+
+const isTasksIndex = (indexName: string) => indexName.startsWith('.tasks');
