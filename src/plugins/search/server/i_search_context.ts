@@ -16,16 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+import { CoreSetup } from '../../../core/server';
+import { IKibanaSearchRequest, IKibanaSearchResponse } from './types';
 
-import { PluginInitializerContext, CoreSetup, CoreStart, Plugin } from '../../../core/server';
-
-export class DataServerPlugin implements Plugin<void, void> {
-  constructor(initializerContext: PluginInitializerContext) {}
-
-  public setup(core: CoreSetup) {}
-
-  public start(core: CoreStart) {}
-  public stop() {}
+export interface ISearchContext {
+  core: CoreSetup;
+  search: {
+    search: <TRequest extends IKibanaSearchRequest, TResponse extends IKibanaSearchResponse<any>>(
+      request: TRequest,
+      strategyName: string
+    ) => Promise<TResponse>;
+  };
 }
-
-export { DataServerPlugin as Plugin };

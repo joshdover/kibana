@@ -14,6 +14,8 @@ import {
 } from 'elasticsearch';
 import { Legacy } from 'kibana';
 import { cloneDeep, has, isString, set } from 'lodash';
+import KbnServer from 'src/legacy/server/kbn_server';
+import { ISearchSetup } from 'src/plugins/search/public';
 import { OBSERVER_VERSION_MAJOR } from '../../../common/elasticsearch_fieldnames';
 import { StringMap } from '../../../typings/common';
 
@@ -88,6 +90,11 @@ interface APMOptions {
 export function getESClient(req: Legacy.Request) {
   const cluster = req.server.plugins.elasticsearch.getCluster('data');
   const query = req.query as StringMap;
+  // convert hapi instance to KbnServer
+  // `kbnServer.server` is the same hapi instance
+  // `kbnServer.newPlatform` has important values
+  const kbnServer = (req.server as unknown) as KbnServer;
+  const search = kbnServer.newPlatform.setup.plugins.search as ISearchSetup;
 
   return {
     search: async <Hits = unknown, U extends SearchParams = {}>(
@@ -111,9 +118,12 @@ export function getESClient(req: Legacy.Request) {
         console.log(JSON.stringify(nextParams.body, null, 4));
       }
 
-      return cluster.callWithRequest(req, 'search', nextParams) as Promise<
+      return search.search(req, ES_SEARCH_STRATEGY).toPromise() as Promise<
         AggregationSearchResponse<Hits, U>
       >;
+      // return cluster.callWithRequest(req, 'search', nextParams) as Promise<
+      //   AggregationSearchResponse<Hits, U>
+      // >;
     },
     index: <Body>(params: IndexDocumentParams<Body>) => {
       return cluster.callWithRequest(req, 'index', params);
