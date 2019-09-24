@@ -18,8 +18,8 @@
  */
 
 import { APICaller } from 'kibana/server';
-import { ISearchStrategy } from './types';
 import { IKibanaSearchRequest, IKibanaSearchResponse } from '../common';
+import { TSearchStrategyProviderEnhanced } from './i_setup_contract';
 
 export interface ISearchApi<
   TRequest extends IKibanaSearchRequest = IKibanaSearchRequest,
@@ -33,11 +33,11 @@ export function createApi({
   defaultSearchStrategyName,
   searchStrategies,
 }: {
-  searchStrategies: Map<string, (caller: APICaller) => Promise<ISearchStrategy<any, any>>>;
+  searchStrategies: Map<string, TSearchStrategyProviderEnhanced<any, any>>;
   defaultSearchStrategyName: string;
   caller: APICaller;
 }) {
-  return {
+  const api = {
     search: async (request: IKibanaSearchRequest, strategyName: string) => {
       const name = strategyName ? strategyName : defaultSearchStrategyName;
       const strategyProvider = searchStrategies.get(name);
@@ -45,11 +45,14 @@ export function createApi({
         throw new Error(`No strategy found for ${strategyName}`);
       }
 
-      const strategy = await strategyProvider(caller);
+      // Give providers access to other search stratgies by injecting this function
+      const strategy = await strategyProvider(caller, api.search);
       if (!strategy) {
         throw new Error(`No strategy named ${name}`);
       }
       return strategy.search(request);
     },
   };
+
+  return api;
 }

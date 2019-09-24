@@ -16,8 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { CoreSetup } from '../../../core/server';
 
-export interface ISearchContext {
-  core: CoreSetup;
-}
+import { IKibanaSearchRequest } from './types';
+import { IKibanaSearchResponse } from '../common';
+
+export type ISearch = <
+  TRequest extends IKibanaSearchRequest,
+  TResponse extends IKibanaSearchResponse<any>
+>(
+  request: TRequest,
+  strategyName: string
+) => Promise<TResponse>;

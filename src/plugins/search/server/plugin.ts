@@ -26,11 +26,16 @@ import {
   APICaller,
 } from '../../../core/server';
 import { registerSearchRoute } from './routes';
-import { ISearchSetup, TSearchStrategyProvider } from './i_setup_contract';
+import {
+  ISearchSetup,
+  TSearchStrategyProvider,
+  TSearchStrategyProviderEnhanced,
+} from './i_setup_contract';
 import { ISearchContext } from './i_search_context';
 import { ISearchStrategy, IKibanaSearchRequest } from './types';
 import { IKibanaSearchResponse } from '../common';
 import { createApi } from './create_api';
+import { ISearch } from './i_search';
 
 const DEFAULT_SEARCH_STRATEGY_KEY = 'default';
 
@@ -46,16 +51,13 @@ declare module 'kibana/server' {
 }
 
 export class SearchServerPlugin implements Plugin<ISearchSetup, void> {
-  private searchStrategies = new Map<
-    string,
-    (caller: APICaller) => Promise<ISearchStrategy<any, any>>
-  >();
+  private searchStrategies = new Map<string, TSearchStrategyProviderEnhanced<any, any>>();
   private defaultSearchStrategyName: string = DEFAULT_SEARCH_STRATEGY_KEY;
 
   private contextContainer?: IContextContainer<
     ISearchContext,
     ISearchStrategy<any, any>,
-    [APICaller]
+    [APICaller, ISearch]
   >;
 
   constructor(private initializerContext: PluginInitializerContext) {}
@@ -64,11 +66,7 @@ export class SearchServerPlugin implements Plugin<ISearchSetup, void> {
     const router = core.http.createRouter();
     registerSearchRoute(router);
 
-    this.contextContainer = core.context.createContextContainer<
-      ISearchContext,
-      ISearchStrategy<any, any>,
-      [APICaller]
-    >();
+    this.contextContainer = core.context.createContextContainer();
 
     core.http.registerRouteHandlerContext<'search'>('search', context => {
       const searchAPI = createApi({
@@ -76,15 +74,6 @@ export class SearchServerPlugin implements Plugin<ISearchSetup, void> {
         defaultSearchStrategyName: this.defaultSearchStrategyName,
         searchStrategies: this.searchStrategies,
       });
-      try {
-        this.contextContainer!.registerContext(
-          this.initializerContext.opaqueId,
-          'search',
-          () => searchAPI
-        );
-      } catch (e) {
-        console.log('error: ' + e);
-      }
       return searchAPI;
     });
 
@@ -97,10 +86,8 @@ export class SearchServerPlugin implements Plugin<ISearchSetup, void> {
         name: string,
         strategyProvider: TSearchStrategyProvider<any, any>
       ) => {
-        this.searchStrategies.set(
-          name,
-          this.contextContainer!.createHandler(plugin, strategyProvider)
-        );
+        const x = this.contextContainer!.createHandler(plugin, strategyProvider);
+        this.searchStrategies.set(name, x);
       },
       __LEGACY: {
         search: (caller: APICaller, request: IKibanaSearchRequest, strategyName: string) => {

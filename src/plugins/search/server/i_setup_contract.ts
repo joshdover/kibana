@@ -17,10 +17,11 @@
  * under the License.
  */
 
-import { RequestHandlerContext, IContextProvider, KibanaRequest, APICaller } from 'kibana/server';
+import { IContextProvider, APICaller } from 'kibana/server';
 import { IKibanaSearchResponse, IKibanaSearchRequest } from '../common';
 import { ISearchStrategy } from './types';
 import { ISearchContext } from './i_search_context';
+import { ISearch } from './i_search';
 
 /**
  * Search strategy interface contains a search method that takes in
@@ -41,14 +42,28 @@ export interface ISearchStrategy<
 export type TSearchStrategyProvider<
   TRequest extends IKibanaSearchRequest,
   TResponse extends IKibanaSearchResponse<any>
-> = (context: ISearchContext, caller: APICaller) => ISearchStrategy<TRequest, TResponse>;
+> = (
+  context: ISearchContext,
+  caller: APICaller,
+  search: ISearch
+) => ISearchStrategy<TRequest, TResponse>;
+
+/**
+ * Search strategy provider creates an instance of a search strategy with the request
+ * handler context bound to it. This way every search strategy can use
+ * whatever information they require from the request context.
+ */
+export type TSearchStrategyProviderEnhanced<
+  TRequest extends IKibanaSearchRequest,
+  TResponse extends IKibanaSearchResponse<any>
+> = (caller: APICaller, search: ISearch) => Promise<ISearchStrategy<TRequest, TResponse>>;
 
 /**
  * The setup contract exposed by the Search plugin exposes the search strategy extension
  * point.
  */
 export interface ISearchSetup {
-  registerSearchStrategyContext: <TContextName extends 'core' | 'search'>(
+  registerSearchStrategyContext: <TContextName extends keyof ISearchContext>(
     pluginId: symbol,
     strategyName: TContextName,
     provider: IContextProvider<ISearchContext, TContextName, []>
