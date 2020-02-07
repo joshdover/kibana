@@ -42,9 +42,13 @@ interface RouterRoute {
  *
  * @public
  */
-export type RouteRegistrar<Method extends RouteMethod> = <P, Q, B>(
+export type RouteRegistrar<Method extends RouteMethod, Context extends RequestHandlerContext> = <
+  P,
+  Q,
+  B
+>(
   route: RouteConfig<P, Q, B, Method>,
-  handler: RequestHandler<P, Q, B, Method>
+  handler: RequestHandler<P, Q, B, Method, Context>
 ) => void;
 
 /**
@@ -53,7 +57,7 @@ export type RouteRegistrar<Method extends RouteMethod> = <P, Q, B>(
  *
  * @public
  */
-export interface IRouter {
+export interface IRouter<Context extends RequestHandlerContext = RequestHandlerContext> {
   /**
    * Resulted path
    */
@@ -64,35 +68,35 @@ export interface IRouter {
    * @param route {@link RouteConfig} - a route configuration.
    * @param handler {@link RequestHandler} - a function to call to respond to an incoming request
    */
-  get: RouteRegistrar<'get'>;
+  get: RouteRegistrar<'get', Context>;
 
   /**
    * Register a route handler for `POST` request.
    * @param route {@link RouteConfig} - a route configuration.
    * @param handler {@link RequestHandler} - a function to call to respond to an incoming request
    */
-  post: RouteRegistrar<'post'>;
+  post: RouteRegistrar<'post', Context>;
 
   /**
    * Register a route handler for `PUT` request.
    * @param route {@link RouteConfig} - a route configuration.
    * @param handler {@link RequestHandler} - a function to call to respond to an incoming request
    */
-  put: RouteRegistrar<'put'>;
+  put: RouteRegistrar<'put', Context>;
 
   /**
    * Register a route handler for `PATCH` request.
    * @param route {@link RouteConfig} - a route configuration.
    * @param handler {@link RequestHandler} - a function to call to respond to an incoming request
    */
-  patch: RouteRegistrar<'patch'>;
+  patch: RouteRegistrar<'patch', Context>;
 
   /**
    * Register a route handler for `DELETE` request.
    * @param route {@link RouteConfig} - a route configuration.
    * @param handler {@link RequestHandler} - a function to call to respond to an incoming request
    */
-  delete: RouteRegistrar<'delete'>;
+  delete: RouteRegistrar<'delete', Context>;
 
   /**
    * Wrap a router handler to catch and converts legacy boom errors to proper custom errors.
@@ -108,9 +112,13 @@ export interface IRouter {
   getRoutes: () => RouterRoute[];
 }
 
-export type ContextEnhancer<P, Q, B, Method extends RouteMethod> = (
-  handler: RequestHandler<P, Q, B, Method>
-) => RequestHandlerEnhanced<P, Q, B, Method>;
+export type ContextEnhancer<
+  P,
+  Q,
+  B,
+  Method extends RouteMethod,
+  Context extends RequestHandlerContext
+> = (handler: RequestHandler<P, Q, B, Method, Context>) => RequestHandlerEnhanced<P, Q, B, Method>;
 
 function getRouteFullPath(routerPath: string, routePath: string) {
   // If router's path ends with slash and route's path starts with slash,
@@ -193,22 +201,22 @@ function validOptions(
 /**
  * @internal
  */
-export class Router implements IRouter {
+export class Router<Context extends RequestHandlerContext> implements IRouter<Context> {
   public routes: Array<Readonly<RouterRoute>> = [];
-  public get: IRouter['get'];
-  public post: IRouter['post'];
-  public delete: IRouter['delete'];
-  public put: IRouter['put'];
-  public patch: IRouter['patch'];
+  public get: IRouter<Context>['get'];
+  public post: IRouter<Context>['post'];
+  public delete: IRouter<Context>['delete'];
+  public put: IRouter<Context>['put'];
+  public patch: IRouter<Context>['patch'];
 
   constructor(
     public readonly routerPath: string,
     private readonly log: Logger,
-    private readonly enhanceWithContext: ContextEnhancer<any, any, any, any>
+    private readonly enhanceWithContext: ContextEnhancer<any, any, any, any, Context>
   ) {
     const buildMethod = <Method extends RouteMethod>(method: Method) => <P, Q, B>(
       route: RouteConfig<P, Q, B, Method>,
-      handler: RequestHandler<P, Q, B, Method>
+      handler: RequestHandler<P, Q, B, Method, Context>
     ) => {
       const routeSchemas = routeSchemasFromRouteConfig(route, method);
 
@@ -316,9 +324,10 @@ export type RequestHandler<
   P = unknown,
   Q = unknown,
   B = unknown,
-  Method extends RouteMethod = any
+  Method extends RouteMethod = any,
+  Context extends RequestHandlerContext = RequestHandlerContext
 > = (
-  context: RequestHandlerContext,
+  context: Context,
   request: KibanaRequest<P, Q, B, Method>,
   response: KibanaResponseFactory
 ) => IKibanaResponse<any> | Promise<IKibanaResponse<any>>;

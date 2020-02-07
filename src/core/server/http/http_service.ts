@@ -29,7 +29,7 @@ import { CoreContext } from '../core_context';
 import { PluginOpaqueId } from '../plugins';
 import { CspConfigType, config as cspConfig } from '../csp';
 
-import { Router } from './router';
+import { ContextEnhancer, Router } from './router';
 import { HttpConfig, HttpConfigType, config as httpConfig } from './http_config';
 import { HttpServer } from './http_server';
 import { HttpsRedirectServer } from './https_redirect_server';
@@ -100,9 +100,17 @@ export class HttpService implements CoreService<InternalHttpServiceSetup, HttpSe
     const contract: InternalHttpServiceSetup = {
       ...serverContract,
 
-      createRouter: (path: string, pluginId: PluginOpaqueId = this.coreContext.coreId) => {
+      createRouter: <Context extends RequestHandlerContext>(
+        path: string,
+        pluginId: PluginOpaqueId = this.coreContext.coreId
+      ) => {
         const enhanceHandler = this.requestHandlerContext!.createHandler.bind(null, pluginId);
-        const router = new Router(path, this.log, enhanceHandler);
+        const router = new Router<Context>(
+          path,
+          this.log,
+          // Force cast this to the specified context type
+          enhanceHandler as ContextEnhancer<any, any, any, any, Context>
+        );
         registerRouter(router);
         return router;
       },
